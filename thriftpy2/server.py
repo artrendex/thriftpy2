@@ -64,7 +64,6 @@ class TSimpleServer(TServer):
         self.closed = True
 
 
-
 class TThreadedServer(TServer):
     """Threaded server that spawns a new thread per each connection."""
 
@@ -84,7 +83,6 @@ class TThreadedServer(TServer):
                 while self.concurrent != 0 and self.current_concurrent >= self.concurrent:
                     time.sleep(self.wait)
                 self.current_concurrent += 1
-                print(self.current_concurrent)
                 t = threading.Thread(target=self.handle, args=(client,))
                 t.setDaemon(self.daemon)
                 t.start()
@@ -109,7 +107,6 @@ class TThreadedServer(TServer):
         itrans.close()
         otrans.close()
         self.current_concurrent -= 1
-        print(self.current_concurrent)
 
     def close(self):
         self.closed = True
