@@ -64,25 +64,30 @@ class TSimpleServer(TServer):
         self.closed = True
 
 
+
 class TThreadedServer(TServer):
     """Threaded server that spawns a new thread per each connection."""
 
     def __init__(self, *args, **kwargs):
         self.daemon = kwargs.pop("daemon", False)
         self.concurrent = kwargs.pop("concurrent", 0)
+        self.wait = kwargs.pop("loop_wait", 0.01)
         self.current_concurrent = 0
         TServer.__init__(self, *args, **kwargs)
         self.closed = False
 
     def serve(self):
         self.trans.listen()
-        while not self.closed and (self.concurrent == 0 or self.current_concurrent < self.concurrent):
+        while not self.closed:
             try:
                 client = self.trans.accept()
+                while self.concurrent != 0 and self.current_concurrent >= self.concurrent:
+                    time.sleep(self.wait)
+                self.current_concurrent += 1
+                print(self.current_concurrent)
                 t = threading.Thread(target=self.handle, args=(client,))
                 t.setDaemon(self.daemon)
                 t.start()
-                self.current_concurrent += 1
             except KeyboardInterrupt:
                 raise
             except Exception as x:
@@ -104,6 +109,7 @@ class TThreadedServer(TServer):
         itrans.close()
         otrans.close()
         self.current_concurrent -= 1
+        print(self.current_concurrent)
 
     def close(self):
         self.closed = True
