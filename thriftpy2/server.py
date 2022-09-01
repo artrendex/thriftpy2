@@ -69,17 +69,20 @@ class TThreadedServer(TServer):
 
     def __init__(self, *args, **kwargs):
         self.daemon = kwargs.pop("daemon", False)
+        self.concurrent = kwargs.pop("concurrent", 0)
+        self.current_concurrent = 0
         TServer.__init__(self, *args, **kwargs)
         self.closed = False
 
     def serve(self):
         self.trans.listen()
-        while not self.closed:
+        while not self.closed and (self.concurrent == 0 or self.current_concurrent < self.concurrent):
             try:
                 client = self.trans.accept()
                 t = threading.Thread(target=self.handle, args=(client,))
                 t.setDaemon(self.daemon)
                 t.start()
+                self.current_concurrent += 1
             except KeyboardInterrupt:
                 raise
             except Exception as x:
@@ -100,6 +103,7 @@ class TThreadedServer(TServer):
 
         itrans.close()
         otrans.close()
+        self.current_concurrent -= 1
 
     def close(self):
         self.closed = True
